@@ -23,6 +23,12 @@ class PokeType(enum.StrEnum):
     GRASS = 'grass'
     POISON = 'poison'
     FIGHTING = 'fighting'
+    ROCK = 'rock'
+    GROUND = 'ground'
+    GHOST = 'ghost'
+    DRAGON = 'dragon'
+    BUG = 'bug'
+    FIRE = 'fire'
 
 TYPE_COLOR = {
     PokeType.NORMAL: "",
@@ -37,6 +43,12 @@ TYPE_COLOR = {
     PokeType.GRASS: Fore.GREEN,
     PokeType.POISON: Fore.MAGENTA + Style.DIM,
     PokeType.FIGHTING: Fore.RED,
+    PokeType.ROCK: Fore.RED + Style.DIM,
+    PokeType.GROUND: Fore.GREEN + Style.DIM,
+    PokeType.GHOST: Fore.BLUE + Style.DIM,
+    PokeType.DRAGON: Fore.YELLOW + Style.BRIGHT,
+    PokeType.BUG: Fore.GREEN + Style.BRIGHT,
+    PokeType.FIRE: Fore.RED + Style.BRIGHT,
 }
 
 def type_string(_type: PokeType, color=True) -> str:
@@ -82,12 +94,14 @@ class Move:
         return cls(name, description, _type)
 
 class PokemonSpecies:
-    def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str], moves: List[Move]):
+    def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str], moves: List[Move], evolves_from: str|None = None, evolves_to: List[str]|None = None):
         self.name = name
         self.types = types
         self.descriptions = descriptions
         self.moves = moves
         self.genus = genus
+        self.evolves_from = evolves_from
+        self.evolves_to = evolves_to if evolves_to is not None else []
 
     def to_string(self, color: bool = True, indent_lvl: int = 0):
         indent = INDENT_STOP * indent_lvl
@@ -95,7 +109,7 @@ class PokemonSpecies:
         text += [f"{title("DESCRIPTIONS:", color)}"]
         for desc in self.descriptions:
             text += [f" - {desc}"]
-        text += [f"{title("EVOLUTION:", color)}"]
+        text += [f"{title("EVOLVED FROM:", color)} {self.evolves_from}"]
         text += [f"{title("TYPE:", color)} {', '.join(type_string(t, color) for t in self.types)}"]
         text += [title("MOVES:", color)]
         for m in self.moves:
@@ -119,7 +133,8 @@ class PokemonSpecies:
         types = [PokeType(t.type.name) for t in res.types]
         moves = [Move.from_db(k) for k in cls._filter_db_moves_by_learn_method(res.moves, 'level-up')]
         genus = reflow_text(fetch_english(res.species.genera)[0].genus)
-        return cls(name, genus, types, descriptions, moves)
+        evolves_from = fetch_english(res.species.evolves_from_species.names).pop().name if res.species.evolves_from_species else None
+        return cls(name, genus, types, descriptions, moves, evolves_from)
 
 
 def parse_args():
