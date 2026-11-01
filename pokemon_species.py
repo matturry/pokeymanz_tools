@@ -5,8 +5,7 @@ import enum
 
 from colorama import Fore, Style
 
-import pokebase
-from pokebase import cache
+from helpers.db import PokeDB, filter_by_language
 
 INDENT_STOP = " " * 2
 
@@ -61,11 +60,6 @@ def title(text, color=True):
         return text
     return f"{Style.BRIGHT}{text}{Style.RESET_ALL}"
 
-def reflow_text(text):
-    return text.replace('\n', ' ').replace('\u000c', ' ')
-
-def fetch_english(field):
-    return [entry for entry in field if entry.language.name == 'en']
 
 class Move:
     def __init__(self, name: str, description: str, _type: PokeType):
@@ -85,16 +79,17 @@ class Move:
         return self.to_string(color=False)
 
     @classmethod
-    def from_db(cls, key: str) -> Move:
-        res = pokebase.APIResource('move', key)
-        name = fetch_english(res.names)[0].name
+    def from_db(cls, name: str) -> Move:
+        res = PokeDB.move.find_by_key(name)
+        name = filter_by_language(res.names)[0].name
         # The move descriptions don't add much, just take one of them
-        description = reflow_text(fetch_english(res.flavor_text_entries)[-1].flavor_text)
+        description = filter_by_language(res.flavor_text_entries)[-1].flavor_text
         _type = PokeType(res.type.name)
         return cls(name, description, _type)
 
 class PokemonSpecies:
-    def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str], moves: List[Move], evolves_from: str|None = None, evolves_to: List[str]|None = None):
+    def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str],
+                 moves: List[Move], evolves_from: str|None = None, evolves_to: List[str]|None = None):
         self.name = name
         self.types = types
         self.descriptions = descriptions
@@ -126,18 +121,19 @@ class PokemonSpecies:
         return filtered_moves
 
     @classmethod
-    def from_db(cls, key: str) -> PokemonSpecies:
-        res = pokebase.APIResource('pokemon', key)
-        name = fetch_english(res.species.names)[0].name
+    def from_db(cls, pokemon: str) -> PokemonSpecies:
+        res = PokeDB.pokemon.find_by_key(pokemon)
+        name = filter_by_language(res.species.names, 'en')[0].name
+
         descriptions = list(set(
-            reflow_text(desc.flavor_text) for desc in fetch_english(res.species.flavor_text_entries)
+            desc.flavor_text for desc in filter_by_language(res.species.flavor_text_entries, 'en')
         ))
         types = [PokeType(t.type.name) for t in res.types]
         moves = [Move.from_db(k) for k in cls._filter_db_moves_by_learn_method(res.moves, 'level-up')]
-        genus = reflow_text(fetch_english(res.species.genera)[0].genus)
+        genus = filter_by_language(res.species.genera, 'en')[0].genus
         evolves_from = None
         if res.species.evolves_from_species:
-            evolves_from = fetch_english(res.species.evolves_from_species.names).pop().name
+            evolves_from = filter_by_language(res.species.evolves_from_species.names, 'en').pop().name
         evolves_to = []
 
         return cls(name, genus, types, descriptions, moves, evolves_from)
@@ -146,14 +142,9 @@ class PokemonSpecies:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('pokemon')
-    parser.add_argument('--flush-cache', action='store_true')
-    parser.add_argument('--cache-path', default='.cache')
     return parser.parse_args()
 
 def main(args):
-    cache.set_cache(args.cache_path)
-    if args.flush_cache:
-        cache.empty_cache()
     p = PokemonSpecies.from_db(args.pokemon)
     print(p.to_string())
 
