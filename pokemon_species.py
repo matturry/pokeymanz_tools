@@ -129,11 +129,17 @@ class PokemonSpecies:
     def from_db(cls, key: str) -> PokemonSpecies:
         res = pokebase.APIResource('pokemon', key)
         name = fetch_english(res.species.names)[0].name
-        descriptions = list(set(reflow_text(desc.flavor_text) for desc in fetch_english(res.species.flavor_text_entries)))
+        descriptions = list(set(
+            reflow_text(desc.flavor_text) for desc in fetch_english(res.species.flavor_text_entries)
+        ))
         types = [PokeType(t.type.name) for t in res.types]
         moves = [Move.from_db(k) for k in cls._filter_db_moves_by_learn_method(res.moves, 'level-up')]
         genus = reflow_text(fetch_english(res.species.genera)[0].genus)
-        evolves_from = fetch_english(res.species.evolves_from_species.names).pop().name if res.species.evolves_from_species else None
+        evolves_from = None
+        if res.species.evolves_from_species:
+            evolves_from = fetch_english(res.species.evolves_from_species.names).pop().name
+        evolves_to = []
+
         return cls(name, genus, types, descriptions, moves, evolves_from)
 
 
