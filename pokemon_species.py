@@ -5,7 +5,7 @@ import enum
 
 from colorama import Fore, Style
 
-from helpers.db import PokeDB, filter_by_language
+from helpers.db import PokeDB, filter_by_language, EvolutionNode
 
 INDENT_STOP = " " * 2
 
@@ -134,8 +134,8 @@ class PokemonSpecies:
         evolves_from = None
         if res.species.evolves_from_species:
             evolves_from = filter_by_language(res.species.evolves_from_species.names, 'en').pop().name
-        evolves_to = []
-
+        evolution_tree = EvolutionNode.tree_from_chain(res.species.evolution_chain.chain)
+        ev_node = evolution_tree.find_evolution(pokemon)
         return cls(name, genus, types, descriptions, moves, evolves_from)
 
 

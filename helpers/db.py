@@ -1,3 +1,4 @@
+import dataclasses
 import pathlib
 import json
 
@@ -37,34 +38,58 @@ class DBRow:
         return DBRow(self.data[idx], self.table)
 
 class DBTable:
-    def __init__(self, root: str, path: str, db: DB, default_key=None):
+    def __init__(self, root: str, path: str, db: DB, has_key=True, default_key=None):
         if not default_key:
             default_key = 'name'
         self.default_key = default_key
         self.root = root
         self.path = pathlib.Path('api', 'v2', path)
         self.db = db
+        self.index = None
+        if has_key:
+            self.index = self.load_index()
 
-    def find_by_key(self, value: Any, key: str|None = None) -> Dict[Any, Any]:
-        if not key:
-            key = self.default_key
-
+    def load_index(self) -> Dict[str, int]:
         with open(self.root / self.path / 'index.json', 'r') as f:
             index = json.load(f)
-        for entry in index["results"]:
-            if entry[key] == value:
-                table, idx = self.db.get_table_and_idx_from_url(entry['url'])
-                return table.find_by_idx(idx)
-        raise Exception(f"Failed to find {key}={value}")
+        out = {}
+        for entry in index['results']:
+            url = pathlib.Path(entry['url']).parts
+            out[entry[self.default_key]] = int(url[-1])
+        return out
+
+    def find_by_key(self, value: Any) -> Dict[Any, Any]:
+        if not self.index:
+            raise Exception("No key for this table")
+        if value not in self.index:
+            raise Exception(f"Failed to find {self.default_key}={value}")
+        return self.find_by_idx(self.index[value])
 
     def find_by_idx(self, idx: int):
         with open(self.root / self.path / str(idx) / 'index.json', 'r') as f:
             return DBRow(json.load(f), self)
 
-
 class DB:
-    def __init__(self, db_path, table_names):
-        self.tables = {table_name: DBTable(db_path, table_name, self) for table_name in table_names}
+    TABLES = [
+        'pokemon-species',
+        'pokemon',
+        'move', 
+        'language',
+        'type',
+        'move-learn-method',
+        ('evolution-chain', {'has_key': False}),
+        'evolution-trigger',
+    ]
+
+    def __init__(self, db_path):
+        self.tables = {}
+        for t_info in self.TABLES:
+            if isinstance(t_info, tuple):
+                table_name, init_args = t_info
+            else:
+                table_name = t_info
+                init_args = {}
+            self.tables[table_name] = DBTable(db_path, table_name, self, **init_args)
 
     def get_table_and_idx_from_url(self, url):
         url = pathlib.Path(url).parts
@@ -77,10 +102,33 @@ class DB:
     def __getattr__(self, name):
         return self.tables[name]
 
+@dataclasses.dataclass
+class EvolutionNode:
+    species: DBRow
+    evolves_from: EvolutionNode|None
+    evolves_to: List[EvolutionNode]
 
+    def find_evolution(self, species):
+        if self.species.name == species:
+            return self
+        for c in self.evolves_to:
+            n = c.find_evolution(species)
+            if n:
+                return n
+        raise Exception(f"Failed to find {species}")
+
+    @classmethod
+    def tree_from_chain(cls, chain, ev_from=None):
+        node = cls(chain.species,
+                   evolves_from=ev_from,
+                   evolves_to=[])
+        node.evolves_to = [
+            EvolutionNode.tree_from_chain(ev, node) for ev in chain.evolves_to
+        ]
+        return node
+            
 def filter_by_language(text_list: List[Any], language='en') -> List[Any]:
     return [entry for entry in text_list if entry.language.name == language]
 
 
-
-PokeDB = DB(DB_PATH, ['pokemon-species', 'pokemon', 'move', 'language', 'type', 'move-learn-method'])
+PokeDB = DB(DB_PATH)
