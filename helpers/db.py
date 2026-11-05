@@ -79,6 +79,8 @@ class DB:
         'move-learn-method',
         ('evolution-chain', {'has_key': False}),
         'evolution-trigger',
+        'item',
+        'location',
     ]
 
     def __init__(self, db_path):
@@ -102,30 +104,6 @@ class DB:
     def __getattr__(self, name):
         return self.tables[name]
 
-@dataclasses.dataclass
-class EvolutionNode:
-    species: DBRow
-    evolves_from: EvolutionNode|None
-    evolves_to: List[EvolutionNode]
-
-    def find_evolution(self, species):
-        if self.species.name == species:
-            return self
-        for c in self.evolves_to:
-            n = c.find_evolution(species)
-            if n:
-                return n
-        raise Exception(f"Failed to find {species}")
-
-    @classmethod
-    def tree_from_chain(cls, chain, ev_from=None):
-        node = cls(chain.species,
-                   evolves_from=ev_from,
-                   evolves_to=[])
-        node.evolves_to = [
-            EvolutionNode.tree_from_chain(ev, node) for ev in chain.evolves_to
-        ]
-        return node
             
 def filter_by_language(text_list: List[Any], language='en') -> List[Any]:
     return [entry for entry in text_list if entry.language.name == language]

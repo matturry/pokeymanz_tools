@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import dataclasses
 import enum
 
 from colorama import Fore, Style
 
-from helpers.db import PokeDB, filter_by_language, EvolutionNode
+from helpers.db import PokeDB, filter_by_language
 
 INDENT_STOP = " " * 2
 
@@ -87,6 +88,73 @@ class Move:
         _type = PokeType(res.type.name)
         return cls(name, description, _type)
 
+@dataclasses.dataclass
+class EvolutionNode:
+    _species: str
+    evolves_from: EvolutionNode|None
+    evolves_to: List[EvolutionNode]
+    triggered_by: str|None = None
+    trigger_item: str|None = None
+    held_item: str|None = None
+    time_of_day: str|None = None
+    held_item: str|None = None
+    time_of_day: str|None = None
+    location: str|None = None
+    known_move_type: PokeType|None = None
+
+    def find_evolution(self, species):
+        if self._species == species:
+            return self
+        for c in self.evolves_to:
+            n = c.find_evolution(species)
+            if n:
+                return n
+        return None
+
+    def __str__(self):
+        trig_str = self.triggered_by
+        if self.trigger_item:
+            trig_str += f" Item: {self.trigger_item}"
+        if self.held_item:
+            trig_str += f" Held Item: {self.held_item}"
+        if self.time_of_day:
+            trig_str += f" Time Of Day: {self.time_of_day}"
+        if self.location:
+            trig_str += f" Location: {self.location}"
+        if self.known_move_type:
+            trig_str += f" Known Move Type: {self.known_move_type}"
+        return f"{self.species.name} ({trig_str})"
+
+    @property
+    def species(self):
+        return PokemonSpecies.from_db(self._species)
+
+    @classmethod
+    def tree_from_chain(cls, chain, ev_from=None, **trigger_info):
+        node = cls(chain.species.name,
+                   evolves_from=ev_from,
+                   evolves_to=[],
+                   **trigger_info)
+        node.evolves_to = []
+        for ev in chain.evolves_to:
+            ev_details = ev.evolution_details[-1]
+            triggers = {
+                "triggered_by": filter_by_language(ev_details.trigger.names, "en")[0].name
+            }
+            if ev_details.item:
+                triggers["trigger_item"] = filter_by_language(ev_details.item.names, "en")[0].name
+            if ev_details.held_item:
+                triggers["trigger_item"] = filter_by_language(ev_details.held_item.names, "en")[0].name
+            if ev_details.time_of_day:
+                triggers["time_of_day"] = ev_details.time_of_day
+            if ev_details.location:
+                triggers["location"] = filter_by_language(ev_details.location.names, "en")[0].name
+            if ev_details.known_move_type:
+                triggers["known_move_type"] = PokeType(ev_details.known_move_type.name)
+
+            node.evolves_to += [EvolutionNode.tree_from_chain(ev, node, **triggers)]
+        return node
+
 class PokemonSpecies:
     def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str],
                  moves: List[Move], evolves_from: str|None = None, evolves_to: List[str]|None = None):
@@ -105,6 +173,9 @@ class PokemonSpecies:
         for desc in self.descriptions:
             text += [f" - {desc}"]
         text += [f"{title("EVOLVED FROM:", color)} {self.evolves_from}"]
+        text += [f"{title("EVOLVES_TO:", color)}"]
+        for s in self.evolves_to.evolves_to:
+            text += [f" - {str(s)}"]
         text += [f"{title("TYPE:", color)} {', '.join(type_string(t, color) for t in self.types)}"]
         text += [title("MOVES:", color)]
         for m in self.moves:
@@ -136,7 +207,7 @@ class PokemonSpecies:
             evolves_from = filter_by_language(res.species.evolves_from_species.names, 'en').pop().name
         evolution_tree = EvolutionNode.tree_from_chain(res.species.evolution_chain.chain)
         ev_node = evolution_tree.find_evolution(pokemon)
-        return cls(name, genus, types, descriptions, moves, evolves_from)
+        return cls(name, genus, types, descriptions, moves, evolves_from, ev_node)
 
 
 def parse_args():
