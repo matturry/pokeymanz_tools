@@ -1,0 +1,15 @@
+- species: pikachu
+  exp:
+    min: 5
+    max: 10
+  probability: 0.5
+- species: eevee
+  exp:
+    min: 6
+    max: 7
+  probability: 0.1
+- species: bulbasaur
+  exp:
+    min: 10
+    max: 10
+  probability: 0.4

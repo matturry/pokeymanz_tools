@@ -62,7 +62,7 @@ def title(text, color=True):
     return f"{Style.BRIGHT}{text}{Style.RESET_ALL}"
 
 
-class Move:
+class SpeciesMove:
     def __init__(self, name: str, description: str, _type: PokeType):
         self.name: str = name
         self.description: str = description
@@ -80,7 +80,7 @@ class Move:
         return self.to_string(color=False)
 
     @classmethod
-    def from_db(cls, name: str) -> Move:
+    def from_db(cls, name: str) -> SpeciesMove:
         res = PokeDB.move.find_by_key(name)
         name = filter_by_language(res.names)[0].name
         # The move descriptions don't add much, just take one of them
@@ -157,7 +157,8 @@ class EvolutionNode:
 
 class PokemonSpecies:
     def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str],
-                 moves: List[Move], evolves_from: str|None = None, evolves_to: List[str]|None = None):
+                 moves: List[SpeciesMove], evolves_from: str|None = None,
+                 evolves_to: List[str]|None = None):
         self.name = name
         self.types = types
         self.descriptions = descriptions
@@ -200,7 +201,7 @@ class PokemonSpecies:
             desc.flavor_text for desc in filter_by_language(res.species.flavor_text_entries, 'en')
         ))
         types = [PokeType(t.type.name) for t in res.types]
-        moves = [Move.from_db(k) for k in cls._filter_db_moves_by_learn_method(res.moves, 'level-up')]
+        moves = [SpeciesMove.from_db(k) for k in cls._filter_db_moves_by_learn_method(res.moves, 'level-up')]
         genus = filter_by_language(res.species.genera, 'en')[0].genus
         evolves_from = None
         if res.species.evolves_from_species:
