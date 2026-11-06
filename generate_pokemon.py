@@ -84,10 +84,15 @@ class Pokemon:
     def toughness(self):
         return int(2.5 + math.sqrt(2.25 + 2 * self.toughness_exp))
 
+    @property
+    def exp(self):
+        return self.toughness_exp + sum(m.exp for m in self.moves)
+
     def to_string(self, color:bool=True, indent_lvl:int=0):
         lines =  [f"{title("POKEMON:", color)} {self.species.name} ({self.species.genus})"]
         lines += [f"{title("DESCRIPTION:", color)} {random.choice(self.species.descriptions)}"]
         lines += [f"{title("TYPE:", color)} {', '.join(type_string(t, color) for t in self.species.types)}"]
+        lines += [f"{title("TOTAL EXP:", color)} {self.exp}"]
         lines += [f"{title("TOUGHNESS:", color)} {self.toughness} ({title("EXP:", color)} {self.toughness_exp})"]
         lines += [title("MOVES:", color)]
         for m in self.moves:
