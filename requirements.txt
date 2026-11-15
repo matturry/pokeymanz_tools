@@ -1,3 +1,4 @@
 pokebase
 colorama
 pyyaml
+flask

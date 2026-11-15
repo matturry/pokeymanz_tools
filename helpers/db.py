@@ -3,7 +3,7 @@ import pathlib
 import json
 
 
-DB_PATH = pathlib.Path(__name__).parent.parent / 'api-data' / 'data'
+DB_PATH = pathlib.Path(__file__).parent.parent / 'api-data' / 'data'
 
 class DBRow:
     def __init__(self, data, table):

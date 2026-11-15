@@ -6,7 +6,7 @@ import enum
 
 from colorama import Fore, Style
 
-from helpers.db import PokeDB, filter_by_language
+from db import PokeDB, filter_by_language
 
 INDENT_STOP = " " * 2
 
