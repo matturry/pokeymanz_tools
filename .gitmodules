@@ -1,3 +1,6 @@
 [submodule "api-data"]
 	path = api-data
 	url = git@github.com:matturry/pokemon-api-data.git
+[submodule "pokemon-sprites"]
+	path = pokemon-sprites
+	url = git@github.com:matturry/pokemon-sprites.git

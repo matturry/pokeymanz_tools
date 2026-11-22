@@ -3,10 +3,54 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
-<div id="layout">
-    <div class="box" id="pic">pic</div>
-    <div class="box" id="details">dets</div>
-    <div class="box" id="moves">moves</div>
+<div class="layout">
+    <div class="pokemon boundary_box">
+	    <div class="keyvalue boundary_box"><div class="key">NAME:</div><div class="value">{{name}}</div></div>
+	    <img src="{{sprite_url}}"></img>
+    </div>
+    <div class="details">
+	    <table>
+		    <tr>
+			    <td class="key">Wounds</td>
+			    <td class="value boundary_box">☐ ☐ ☐</td>
+		    </tr>
+		    {% for detail, value in details.items() %}
+		    <tr>
+			    <td class="key">{{detail}}</td>
+			    <td class="value boundary_box">{{value}}</td>
+		    </tr>
+		    {% endfor %}
+		    <tr>
+			    <td class="key notes">Status Effects</td>
+			    <td class="value boundary_box"></td>
+		    </tr>
+		    <tr>
+			    <td class="key notes">Notes</td>
+			    <td class="value boundary_box"></td>
+		    </tr>
+	    </table>
+    </div>
+    <div class="description boundary_box">
+	    {{description}}
+    </div>
+    <div class="moves">
+	    <table>
+		    <tr>
+			    <th id="move">Move</th>
+			    <th id="type">Type</th>
+			    <th id="description">Description</th>
+			    <th id="dice">Dice</th>
+		    </tr>
+		    {% for move in moves %}
+		    <tr>
+			    <td class="key boundary_box">{{ move.move.name }}</td>
+			    <td class="value boundary_box">{{ move.move.type }}</td>
+			    <td class="value boundary_box">{{ move.move.description }}</td>
+			    <td class="value boundary_box">{{ move.dice(move.species.types) }} ({{move.exp}} XP)</td>
+		    </tr>
+		    {% endfor %}
+	    </table>
+    </div>
 </div>
 </body>
 </html>

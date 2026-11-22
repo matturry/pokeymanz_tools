@@ -6,7 +6,7 @@ import enum
 
 from colorama import Fore, Style
 
-from db import PokeDB, filter_by_language
+from .db import PokeDB, filter_by_language
 
 INDENT_STOP = " " * 2
 
@@ -49,6 +49,69 @@ TYPE_COLOR = {
     PokeType.DRAGON: Fore.YELLOW + Style.BRIGHT,
     PokeType.BUG: Fore.GREEN + Style.BRIGHT,
     PokeType.FIRE: Fore.RED + Style.BRIGHT,
+}
+
+WEAKNESS = {
+    PokeType.NORMAL: set([PokeType.FIGHTING]),
+    PokeType.BUG: set([PokeType.FIRE, PokeType.FLYING]),
+    PokeType.DARK: set([PokeType.BUG, PokeType.FAIRY, PokeType.FIGHTING]),
+    PokeType.DRAGON: set([PokeType.DRAGON, PokeType.FAIRY, PokeType.ICE]),
+    PokeType.ELECTRIC: set([PokeType.GROUND]),
+    PokeType.FAIRY: set([PokeType.POISON, PokeType.STEEL]),
+    PokeType.FIGHTING: set([PokeType.FAIRY, PokeType.FLYING, PokeType.PSYCHIC]),
+    PokeType.FIRE: set([PokeType.GROUND, PokeType.ROCK, PokeType.WATER]),
+    PokeType.FLYING: set([PokeType.ELECTRIC, PokeType.ICE, PokeType.ROCK]),
+    PokeType.GHOST: set([PokeType.DARK, PokeType.GHOST]),
+    PokeType.GRASS: set([PokeType.BUG, PokeType.FIRE, PokeType.FLYING, PokeType.ICE, PokeType.POISON]),
+    PokeType.GROUND: set([PokeType.GRASS, PokeType.ICE, PokeType.WATER]),
+    PokeType.ICE: set([PokeType.FIGHTING, PokeType.FIRE, PokeType.ROCK, PokeType.STEEL]),
+    PokeType.POISON: set([PokeType.GROUND, PokeType.PSYCHIC]),
+    PokeType.PSYCHIC: set([PokeType.BUG, PokeType.DARK, PokeType.GHOST]),
+    PokeType.ROCK: set([PokeType.FIGHTING, PokeType.GRASS, PokeType.GROUND, PokeType.STEEL, PokeType.WATER]),
+    PokeType.STEEL: set([PokeType.FIGHTING, PokeType.FIRE, PokeType.GROUND]),
+    PokeType.WATER: set([PokeType.ELECTRIC, PokeType.GRASS]),
+}
+
+IMMUNE = {
+    PokeType.NORMAL: set([PokeType.GHOST]),
+    PokeType.BUG: set(),
+    PokeType.DARK: set([PokeType.PSYCHIC]),
+    PokeType.DRAGON: set(),
+    PokeType.ELECTRIC: set(),
+    PokeType.FAIRY: set([PokeType.DRAGON]),
+    PokeType.FIGHTING: set(),
+    PokeType.FIRE: set(),
+    PokeType.FLYING: set([PokeType.GROUND]),
+    PokeType.GHOST: set([PokeType.NORMAL, PokeType.FIGHTING]),
+    PokeType.GRASS: set(),
+    PokeType.GROUND: set([PokeType.ELECTRIC]),
+    PokeType.ICE: set(),
+    PokeType.POISON: set(),
+    PokeType.PSYCHIC: set(),
+    PokeType.ROCK: set(),
+    PokeType.STEEL: set([PokeType.POISON]),
+    PokeType.WATER: set(),
+}
+
+STRONG = {
+    PokeType.NORMAL: set(),
+    PokeType.BUG: set([PokeType.FIGHTING, PokeType.GRASS, PokeType.GROUND]),
+    PokeType.DARK: set([PokeType.DARK, PokeType.GHOST]),
+    PokeType.DRAGON: set([PokeType.ELECTRIC, PokeType.FIRE, PokeType.GRASS, PokeType.WATER]),
+    PokeType.ELECTRIC: set([PokeType.ELECTRIC, PokeType.FLYING, PokeType.STEEL]),
+    PokeType.FAIRY: set([PokeType.BUG, PokeType.DARK, PokeType.FIGHTING]),
+    PokeType.FIGHTING: set([PokeType.BUG, PokeType.DARK, PokeType.ROCK]),
+    PokeType.FIRE: set([PokeType.BUG, PokeType.FAIRY, PokeType.FIRE, PokeType.GRASS, PokeType.ICE, PokeType.STEEL]),
+    PokeType.FLYING: set([PokeType.BUG, PokeType.FIGHTING, PokeType.GRASS]),
+    PokeType.GHOST: set([PokeType.BUG, PokeType.POISON]),
+    PokeType.GRASS: set([PokeType.ELECTRIC, PokeType.GRASS, PokeType.GROUND, PokeType.WATER]),
+    PokeType.GROUND: set([PokeType.POISON, PokeType.ROCK]),
+    PokeType.ICE: set([PokeType.ICE]),
+    PokeType.POISON: set([PokeType.BUG, PokeType.FAIRY, PokeType.FIGHTING, PokeType.GRASS, PokeType.POISON]),
+    PokeType.PSYCHIC: set([PokeType.FIGHTING, PokeType.PSYCHIC]),
+    PokeType.ROCK: set([PokeType.NORMAL, PokeType.FIRE, PokeType.FLYING, PokeType.POISON]),
+    PokeType.STEEL: set([PokeType.NORMAL, PokeType.BUG, PokeType.DRAGON, PokeType.FAIRY, PokeType.FLYING, PokeType.GRASS, PokeType.ICE, PokeType.PSYCHIC, PokeType.ROCK, PokeType.STEEL]),
+    PokeType.WATER: set([PokeType.FIRE, PokeType.ICE, PokeType.STEEL, PokeType.WATER]),
 }
 
 def type_string(_type: PokeType, color=True) -> str:
@@ -157,13 +220,14 @@ class EvolutionNode:
 
 class PokemonSpecies:
     def __init__(self, name: str, genus: str, types: List[PokeType], descriptions: List[str],
-                 moves: List[SpeciesMove], evolves_from: str|None = None,
+                 moves: List[SpeciesMove], sprite_path: str, evolves_from: str|None = None,
                  evolves_to: List[str]|None = None):
         self.name = name
         self.types = types
         self.descriptions = descriptions
         self.moves = moves
         self.genus = genus
+        self.sprite = sprite_path
         self.evolves_from = evolves_from
         self.evolves_to = evolves_to if evolves_to is not None else []
 
@@ -183,6 +247,27 @@ class PokemonSpecies:
             text += [m.to_string(color, indent_lvl=1), ""]
         return '\n'.join(f"{indent}{l}" for l in text)
 
+    @property
+    def weak(self):
+        weaknesses = set()
+        for _type in self.types:
+            weaknesses |= WEAKNESS[_type]
+        return weaknesses
+
+    @property
+    def immune(self):
+        immune = set()
+        for _type in self.types:
+            immune &= IMMUNE[_type]
+        return immune
+
+    @property
+    def strong(self):
+        strengths = set()
+        for _type in self.types:
+            strengths |= STRONG[_type]
+        return strengths
+
     @staticmethod
     def _filter_db_moves_by_learn_method(moves, method: str) -> list[str]:
         filtered_moves = []
@@ -196,6 +281,7 @@ class PokemonSpecies:
     def from_db(cls, pokemon: str) -> PokemonSpecies:
         res = PokeDB.pokemon.find_by_key(pokemon)
         name = filter_by_language(res.species.names, 'en')[0].name
+        sprite_path = '/'.join(res.sprites.front_default.split('/')[-3:])
 
         descriptions = list(set(
             desc.flavor_text for desc in filter_by_language(res.species.flavor_text_entries, 'en')
@@ -208,7 +294,7 @@ class PokemonSpecies:
             evolves_from = filter_by_language(res.species.evolves_from_species.names, 'en').pop().name
         evolution_tree = EvolutionNode.tree_from_chain(res.species.evolution_chain.chain)
         ev_node = evolution_tree.find_evolution(pokemon)
-        return cls(name, genus, types, descriptions, moves, evolves_from, ev_node)
+        return cls(name, genus, types, descriptions, moves, sprite_path, evolves_from, ev_node)
 
 
 def parse_args():

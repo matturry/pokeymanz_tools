@@ -6,7 +6,7 @@ import math
 import random
 import yaml
 
-from pokemon_species import PokemonSpecies, SpeciesMove, title, type_string, INDENT_STOP
+from .pokemon_species import PokemonSpecies, SpeciesMove, title, type_string, INDENT_STOP
 
 
 class Dice:
@@ -127,6 +127,13 @@ def process_pokemon(pokemon_file):
         pokemon += [(species, (p_details['exp']['min'], p_details['exp']['max']), cum_prob)]
     return pokemon
 
+def generate_pokemon(pokemon_details):
+    prob = random.random()
+    for p in pokemon_details:
+        if p[2] > prob:
+            break
+    return Pokemon.generate_pokemon(p[0], random.randint(*p[1]))
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -139,11 +146,7 @@ def main(args):
         while True:
             input("Press key to generate...")
             print()
-            prob = random.random()
-            for p in pokemon:
-                if p[2] > prob:
-                    break
-            print(Pokemon.generate_pokemon(p[0], random.randint(*p[1])).to_string())
+            print(generate_pokemon(p).to_string())
     except KeyboardInterrupt:
         pass
 

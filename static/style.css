@@ -3,7 +3,87 @@
 	border-radius: 25px;
 }
 
-#layout {
+.layout {
 	display: grid;
-	grid-template-columns: auto auto
+	grid-template-columns: 1fr 2fr;
+	grid-template-areas: "pokemon details" "description description" "moves moves";
+	height:100%;
+}
+
+
+.keyvalue {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+}
+
+.pokemon img {
+	margin: auto;
+	height: 400px;
+	max-width: 100%;
+}
+
+.layout div.pokemon {
+	grid-area: pokemon;
+}
+
+.layout div.details {
+	grid-area: details;
+}
+
+.layout div.moves {
+	grid-area: moves;
+	height: 60%;
+}
+
+.layout div.description {
+	grid-area: description;
+}
+
+.moves table {
+	width: 100%;
+}
+
+.moves th#move {
+	width: 15%;
+}
+
+.moves th#type {
+	width: 15%;
+}
+
+.moves th#dice {
+	width: 15%;
+}
+
+.details table {
+	width: 100%;
+}
+
+.details td.key {
+	width: 15%;
+	text-align: right;
+}
+
+.details td.notes {
+	height: 100px;
+}
+
+.key {
+	font-weight: bold;
+}
+
+.details div.key {
+	grid-area: key;
+}
+
+.details div.value {
+	grid-area: value;
+}
+
+.boundary_box {
+	border-width: medium;
+	border-style: solid;
+	border-radius: 20px;
+	padding: 10px;
+	margin: 10px;
 }
