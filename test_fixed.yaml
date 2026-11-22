@@ -1,0 +1,12 @@
+- species: sprigatito
+  exp: 2
+  moves:
+    Scratch:
+      exp: 1
+    Tail Whip:
+      exp: 0
+    Leafage:
+      exp: 1
+    Bite:
+      exp: 0
+  toughness_exp: 0

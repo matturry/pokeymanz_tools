@@ -103,16 +103,33 @@ class Pokemon:
         return self.to_string(color=False)
 
     @classmethod
-    def generate_pokemon(cls, species, exp_points):
-        toughness_exp = random.randint(0, exp_points)
-        left_over_exp = exp_points - toughness_exp
-        move_exp = [0] * 4
-        for i in range(4):
-            move_exp[i] = random.randint(0, left_over_exp)
-            left_over_exp = left_over_exp - move_exp[i]
-        moves = random.sample(species.moves, min(4, len(species.moves)))
+    def generate_pokemon(cls, species, exp, toughness_exp=None, moves=None, **kwargs):
+        if toughness_exp is None:
+            toughness_exp = random.randint(0, exp)
+        if not isinstance(toughness_exp, int):
+            assert len(toughness_exp) == 2
+            toughness_exp = random.randint(*toughness_exp)
+
+        left_over_exp = exp - toughness_exp
+        this_pokemon_moves = []
+        if moves is None:
+            species_moves = random.sample(species.moves, min(4, len(species.moves)))
+        else:
+            species_moves = [m for m in species.moves if m.name in moves]
+        for i in range(len(species_moves) - 1):
+            if moves is None or 'exp' not in moves[species_moves[i].name]:
+                move_exp = random.randint(0, left_over_exp)
+            else:
+                move_exp = moves[species_moves[i].name]['exp']
+            if not isinstance(move_exp, int):
+                assert len(move_exp) == 2
+                move_exp = random.randint(*move_exp)
+            left_over_exp -= move_exp
+            assert left_over_exp >= 0
+            this_pokemon_moves += [PokemonMove(species_moves[i], move_exp, species)]
+        this_pokemon_moves += [PokemonMove(species_moves[-1], left_over_exp, species)]
         return Pokemon(species,
-                       [PokemonMove(m, move_exp, species) for m, move_exp in zip(moves, move_exp)],
+                       this_pokemon_moves,
                        toughness_exp)
 
 def process_pokemon(pokemon_file):
@@ -121,18 +138,28 @@ def process_pokemon(pokemon_file):
     pokemon = []
     cum_prob = 0
     for p_details in details:
-        cum_prob += p_details['probability']
+        cum_prob += p_details.get('probability', 1)
         assert cum_prob <= 1
         species = PokemonSpecies.from_db(p_details['species'])
-        pokemon += [(species, (p_details['exp']['min'], p_details['exp']['max']), cum_prob)]
+        exp_range = p_details['exp']
+        this_pokemon = {'species': species, 'exp': exp_range, 'cum_prob': cum_prob}
+        if 'moves' in p_details:
+            this_pokemon['moves'] = p_details['moves']
+        if 'toughness_exp' in p_details:
+                this_pokemon['toughness_exp'] = p_details['toughness_exp'] 
+        pokemon += [this_pokemon]
     return pokemon
 
 def generate_pokemon(pokemon_details):
     prob = random.random()
     for p in pokemon_details:
-        if p[2] > prob:
+        if p['cum_prob'] > prob:
             break
-    return Pokemon.generate_pokemon(p[0], random.randint(*p[1]))
+    exp = p['exp']
+    if not isinstance(exp, int):
+        assert len(exp) == 2
+        exp = random.randint(*exp)
+    return Pokemon.generate_pokemon(**{**p, 'exp': exp})
 
 
 def parse_args():
